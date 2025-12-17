@@ -30,6 +30,8 @@ vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
 
+vim.o.termguicolors = true
+
 -- Enable break indent
 vim.o.breakindent = true
 
@@ -116,7 +118,7 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 -- Quick access to nvim init
-vim.keymap.set('n', '<leader>oc', '<cmd>edit ~/.config/nvim/init.lua<CR>', { desc = 'Open nvim config' })
+vim.keymap.set('n', '<leader>fc', '<cmd>edit ~/.config/nvim/init.lua<CR>', { desc = 'Open nvim config' })
 vim.keymap.set('n', '<leader>a1', '<cmd>:!git t1', { desc = 'Push current branch to T1 staging' })
 vim.keymap.set('n', '<leader>a2', '<cmd>:!git t2', { desc = 'Push current branch to T2 staging' })
 
@@ -167,6 +169,79 @@ rtp:prepend(lazypath)
 --
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
+  {
+    'obsidian-nvim/obsidian.nvim',
+    version = '*', -- recommended, use latest release instead of latest commit
+    lazy = true,
+    ft = 'markdown',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'saghen/blink.cmp',
+    },
+    opts = {
+      completion = {
+        nvim_cmp = false,
+        blink = true,
+        min_chars = 2,
+      },
+      workspaces = {
+        {
+          name = 'kendrick',
+          path = '~/vaults/kendrick',
+        },
+      },
+
+      -- see below for full list of options 👇
+    },
+  },
+  'kevinhwang91/promise-async',
+  {
+    'kevinhwang91/nvim-ufo',
+    requires = 'kevinhwang91/promise-async',
+    config = function()
+      vim.o.foldcolumn = '1'
+      vim.o.conceallevel = 1
+      require('ufo').setup {
+        provider_selector = function(bufnr, filetype, buftype)
+          return { 'treesitter', 'indent' }
+        end,
+      }
+    end,
+  },
+  {
+    'Vilos92/media-controls.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+  },
+  -- Neotest
+  {
+    'nvim-neotest/neotest',
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'nvim-lua/plenary.nvim',
+      'antoinemadec/FixCursorHold.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'marilari88/neotest-vitest',
+    },
+    config = function()
+      require('neotest').setup {
+        adapters = {
+          require 'neotest-vitest',
+        },
+      }
+    end,
+  },
+  {
+    'goolord/alpha-nvim',
+    -- dependencies = { 'nvim-mini/mini.icons' },
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      local startify = require 'alpha.themes.startify'
+      -- available: devicons, mini, default is mini
+      -- if provider not loaded and enabled is true, it will try to use another provider
+      startify.file_icons.provider = 'devicons'
+      require('alpha').setup(startify.config)
+    end,
+  },
   -- Neogit Config
   {
     'olimorris/codecompanion.nvim',
@@ -277,7 +352,7 @@ require('lazy').setup({
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
       -- this setting is independent of vim.o.timeoutlen
-      delay = 0,
+      delay = 500,
       icons = {
         -- set icon mappings to true if you have a Nerd Font
         mappings = vim.g.have_nerd_font,
@@ -321,7 +396,7 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-        { '<leader>o', group = '[O]pen' },
+        { '<leader>o', group = '[O]cto' },
         { '<leader>g', group = '[G]it' },
       },
     },
@@ -844,14 +919,12 @@ require('lazy').setup({
       sources = {
         default = { 'copilot', 'lsp', 'path', 'snippets', 'lazydev' },
         providers = {
-          lazydev = { module = 'lazydev.integrations.blink', score_offset = 100, priority = 100 },
+          lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
           copilot = {
             name = 'copilot',
             module = 'blink-copilot',
             score_offset = 0,
             async = true,
-            priority = 10,
-            -- further options can be configured here
           },
         },
       },
@@ -865,21 +938,21 @@ require('lazy').setup({
       -- the rust implementation via `'prefer_rust_with_warning'`
       --
       -- See :h blink-cmp-config-fuzzy for more information
-      fuzzy = { implementation = 'lua' },
+      fuzzy = { implementation = 'prefer_rust' },
 
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },
     },
   },
   {
-    'sainnhe/gruvbox-material',
+    'scottmckendry/cyberdream.nvim',
     lazy = false,
     priority = 1000,
     config = function()
-      -- Optionally configure and load the colorscheme
-      -- directly inside the plugin declaration.
-      vim.g.gruvbox_material_enable_italic = true
-      vim.cmd.colorscheme 'gruvbox-material'
+      require('cyberdream').setup {
+        transparent = true,
+      }
+      vim.cmd.colorscheme 'cyberdream'
     end,
   },
   -- Highlight todo, notes, etc in comments
@@ -987,7 +1060,52 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
-
+  {
+    'pwntester/octo.nvim',
+    cmd = 'Octo',
+    opts = {
+      -- or "fzf-lua" or "snacks" or "default"
+      picker = 'telescope',
+      -- bare Octo command opens picker of commands
+      enable_builtin = true,
+    },
+    keys = {
+      {
+        '<leader>oi',
+        '<CMD>Octo issue list<CR>',
+        desc = 'List GitHub Issues',
+      },
+      {
+        '<leader>op',
+        '<CMD>Octo pr list<CR>',
+        desc = 'List GitHub PullRequests',
+      },
+      {
+        '<leader>od',
+        '<CMD>Octo discussion list<CR>',
+        desc = 'List GitHub Discussions',
+      },
+      {
+        '<leader>on',
+        '<CMD>Octo notification list<CR>',
+        desc = 'List GitHub Notifications',
+      },
+      {
+        '<leader>os',
+        function()
+          require('octo.utils').create_base_search_command { include_current_repo = true }
+        end,
+        desc = 'Search GitHub',
+      },
+    },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-telescope/telescope.nvim',
+      -- OR "ibhagwan/fzf-lua",
+      -- OR "folke/snacks.nvim",
+      'nvim-tree/nvim-web-devicons',
+    },
+  },
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
